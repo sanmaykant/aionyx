@@ -1,22 +1,23 @@
-import { ChatCompletion } from "@google-ai/generative";
-import { LLMChain, PromptTemplate } from "langchain";
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
+dotenv.config();
+import { buildPrompt } from '../utils/prompts/GeminiPrompt.js';
 
-const client = new ChatCompletion({
-  model: "gemini-2.0-flash-thinking-exp-1219",
-  apiKey: process.env.GEMINI_API,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Define your prompt template
-const prompt = new PromptTemplate({
-  template: "Extract appointment details from the text: {text}",
-  inputVariables: ["text"],
-});
+export async function generateInsight(inputText) {
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-thinking-exp-1219' });
 
-const llmChain = new LLMChain({ llm: client, prompt });
+  const prompt = buildPrompt(inputText);
 
-async function parseAppointments(text) {
-  const response = await llmChain.call({ text });
-  console.log(response.text); // parse response as needed
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    console.log("🧠 Gemini Output:\n", text);
+  } catch (err) {
+    console.error("❌ Error calling Gemini:", err);
+  }
 }
 
-parseAppointments("Let's have a meeting at 2 PM to 3 PM today")
