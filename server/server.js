@@ -1,5 +1,5 @@
 import { Outcome } from "@google/generative-ai";
-import { generateInsight, recieveMissingInfo, regenerateInsight } from "./controller/llmController.js";
+import { generateInsight, regenerateInsight } from "./controller/llmController.js";
 
 let inputText = `> From: Alice  
 > Just a reminder — our review session is Monday at 2pm.  
@@ -20,7 +20,7 @@ generateInsight(inputText).then(async output => {
     const meetingData = JSON.parse(cleaned);
     console.log(meetingData)
     // if (meetingData.missing_info.length > 0) {
-    //   await recieveMissingInfo(meetingData.missing_info, inputText)
+      
     // }
   } catch (e) {
     console.error("Invalid JSON from model");
@@ -28,7 +28,7 @@ generateInsight(inputText).then(async output => {
 
 });
 
-//regenerateInsight(inputText, clarificationMessage)
+regenerateInsight(inputText, clarificationMessage)
 
 
 
