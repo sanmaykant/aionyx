@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const clientId = ''; // your OAuth client ID
+const clientId = '803213573314-pl0u081jhi611utaddtleto7u31eopfh.apps.googleusercontent.com'; // your OAuth client ID
 
 function App() {
   const [tokenClient, setTokenClient] = useState(null);
@@ -38,10 +38,10 @@ function App() {
         dateTime: new Date(new Date().getTime() + 5 * 60000).toISOString(),
         timeZone: 'UTC',
       },
-      end: {
-        dateTime: new Date(new Date().getTime() + 65 * 60000).toISOString(),
-        timeZone: 'UTC',
-      },
+      // end: {
+      //   dateTime: new Date(new Date().getTime() + 65 * 60000).toISOString(),
+      //   timeZone: 'UTC',
+      // },
     };
 
     fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {

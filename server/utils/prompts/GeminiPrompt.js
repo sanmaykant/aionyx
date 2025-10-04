@@ -15,7 +15,7 @@ Input:
 "${userMessage}"
 context : today's date is "${today.toISOString()}"
 
-If the message contains multiple meetings, return **separate JSON objects for each meeting** (not combined into a single array).  
+If the message contains multiple meetings, return **separate JSON objects for each meeting** (combined into a single array).  
 
 If any field is missing or ambiguous, set its value to null and explain what is missing in a separate "missing_info" array.
 

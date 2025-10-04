@@ -16,18 +16,19 @@ generateInsight(inputText).then(async output => {
       .replace(/```json/g, '')  // remove opening ```
       .replace(/```/g, '')      // remove closing ```
       .trim();                  // remove extra whitespace
+    //console.log(cleaned)
     const meetingData = JSON.parse(cleaned);
     console.log(meetingData)
-    if (meetingData.missing_info.length > 0) {
-      await recieveMissingInfo(meetingData.missing_info, inputText)
-    }
+    // if (meetingData.missing_info.length > 0) {
+    //   await recieveMissingInfo(meetingData.missing_info, inputText)
+    // }
   } catch (e) {
     console.error("Invalid JSON from model");
   }
 
 });
 
-regenerateInsight(inputText, clarificationMessage)
+//regenerateInsight(inputText, clarificationMessage)
 
 
 
