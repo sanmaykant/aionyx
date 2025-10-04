@@ -15,23 +15,23 @@ Input:
 "${userMessage}"
 context : today's date is "${today.toISOString()}"
 
+If the message contains multiple meetings, return **separate JSON objects for each meeting** (not combined into a single array).  
+
 If any field is missing or ambiguous, set its value to null and explain what is missing in a separate "missing_info" array.
 
-
 Return ONLY the JSON in the following format:
-
 {
   "title": "...",
   "date": "...",
   "start_time": "...",
   "end_time": "...",
   "missing_info": [ ... ]
-} 
+}
   
 for example, if title is null, then missing_info should be missing_info: ['title'].
 do not add additional information in missing_info.
 interpret afternoon same as noon.
-if end_time is null, add it to missing_info, and set end_time 45 mins after start time.
+if end_time is null, add it to missing_info.
 whenever possible add name of meeting participants/scheduler in the title`
 }
 
@@ -44,7 +44,7 @@ export function generateClarificationPrompt(missingFields, originalMessage) {
   };
 
   const questions = missingFields
-    .map(field => fieldQuestions[field] || `Can you provide the ${field}?`)
+    .map(field => fieldQuestions[field] || `Can you provide the ${field} for the appointment?`)
     .join('\n');
 
   return `

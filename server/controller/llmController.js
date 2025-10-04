@@ -6,7 +6,7 @@ import { buildPrompt, generateClarificationPrompt, generateFinalJsonPrompt } fro
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export async function generateInsight(inputText) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-thinking-exp-1219' });
+  const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' });
 
   const prompt = buildPrompt(inputText);
 
@@ -23,7 +23,7 @@ export async function generateInsight(inputText) {
 }
 
 export async function recieveMissingInfo(missingFields, inputText) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-thinking-exp-1219' });
+  const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' });
 
   const prompt = generateClarificationPrompt(missingFields, inputText);
 
@@ -40,7 +40,7 @@ export async function recieveMissingInfo(missingFields, inputText) {
 }
 
 export async function regenerateInsight(inputText, clarificationMessage) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-thinking-exp-1219' });
+  const model = genAI.getGenerativeModel({ model: 'gemma-3-27b-it' });
 
   const prompt = generateFinalJsonPrompt(inputText, clarificationMessage);
 
@@ -54,6 +54,8 @@ export async function regenerateInsight(inputText, clarificationMessage) {
     console.error("❌ Error calling Gemini:", err);
   }
 }
+
+//gemini-2.0-flash-thinking-exp-1219
 
 
 
