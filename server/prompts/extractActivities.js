@@ -65,6 +65,26 @@ If a suggestion is optional or vague (e.g. “Let’s catch up sometime”), ext
 
 ---
 
+### Date Interpretation Rule
+
+- Today's date is **${(new Date()).toISOString()}**.
+- When interpreting dates, use the following rules:
+
+  1. **Relative references** such as "tomorrow", "next Monday", "in two days" must be converted to full ISO 8601 using today's date as the reference point.
+
+  2. **Month + day without year** (e.g. "March 5th", "Jul 22") → 
+     - If the date has not yet occurred this year, assume **this year**.
+     - If it has already passed, assume **next year**.
+
+  3. **Day of week only** ("Tuesday at 4pm") →
+     - Convert to the **next upcoming occurrence** of that weekday from today.
+
+  4. **Vague or incomplete references** (e.g. “sometime in May”, “later this month”) →
+     - Set \`"start_time": null\`, but include \`"raw_date_text"\` inside metadata.
+
+- Do NOT infer dates when there is no clear action or user involvement.
+
+
 Now process the following message:
 
 ${text}`

@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { retrieveActivities } from "./utils/llmApi";
+import { retrieveActivities } from "./utils/api";
+import { scheduleEvent } from "./utils/scheduleApi";
 
 export default function Dashboard() {
   const [accessToken, setAccessToken] = useState("");
@@ -16,13 +17,22 @@ export default function Dashboard() {
     endTime: "",
     description: "",
     tags: "",
-    deadline: "", // New field for deadline
+    deadline: "",
   });
   const [newMessage, setNewMessage] = useState(""); // Tracks the new message to submit
   const [loading, setLoading] = useState(false); // Loading state for retrieveActivities
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Safely check if all fields are filled
+  const isFormComplete =
+    formData.title.trim() &&
+    formData.startTime &&
+    formData.endTime &&
+    formData.description.trim() &&
+    formData.tags.trim() &&
+    formData.deadline;
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -34,117 +44,89 @@ export default function Dashboard() {
   }, [location.search, navigate]);
 
   const handleMessageSubmit = async () => {
-    if (!newMessage.trim()) return; // Don't create an empty card
+    if (!newMessage.trim()) return;
 
-    setLoading(true); // Start loading when function is called
+    setLoading(true);
 
-    // Parse activities from the message text
     const parsedActivities = await retrieveActivities(newMessage);
+    setLoading(false);
 
-    setLoading(false); // Stop loading when function is finished
-
-    // If there are activities, update the activities array with new cards
     if (parsedActivities && parsedActivities.length > 0) {
-      const updatedActivities = [
-        ...activities,
-        ...parsedActivities.map((activity) => ({
-          title: activity.title,
-          startTime: activity.start_time,
-          endTime: activity.end_time,
-          description: activity.metadata.raw_excerpt,
-          tags: activity.metadata.descriptors.join(", "),
-          deadline: activity.deadline || "", // Include deadline if available
-        })),
-      ];
+      const newActivities = parsedActivities.map((activity) => ({
+        title: String(activity.title),
+        startTime: activity.start_time ? String(activity.start_time.replace(".000Z", "")) : "",
+        endTime: activity.end_time ? String(activity.end_time) : "",
+        description: String(activity.metadata.raw_excerpt),
+        tags: activity.metadata.descriptors.join(", "),
+        deadline: activity.deadline ? String(activity.deadline) : "",
+        scheduleStatus: null,
+      }));
 
+      const updatedActivities = [...activities, ...newActivities];
       setActivities(updatedActivities);
-      setNewMessage(""); // Reset the input after submission
+      setNewMessage("");
 
-      // Auto-select the first activity in the newly created cards
-      const newActivityIndex = updatedActivities.length - parsedActivities.length;
-      setSelectedActivity(newActivityIndex);
-
-      // Populate form with the data of the first new activity
-      const firstNewActivity = updatedActivities[newActivityIndex];
-      setFormData({
-        title: firstNewActivity.title,
-        startTime: firstNewActivity.startTime,
-        endTime: firstNewActivity.endTime,
-        description: firstNewActivity.description,
-        tags: firstNewActivity.tags,
-        deadline: firstNewActivity.deadline,
-      });
+      // Auto-select first new activity
+      const firstIndex = updatedActivities.length - newActivities.length;
+      setSelectedActivity(firstIndex);
+      setFormData({ ...newActivities[0] });
     }
   };
 
   const handleCardClick = (index) => {
-    // Populate the form with the data of the clicked activity
     const activity = activities[index];
     setSelectedActivity(index);
-    setFormData({
-      title: activity.title,
-      startTime: activity.startTime,
-      endTime: activity.endTime,
-      description: activity.description,
-      tags: activity.tags,
-      deadline: activity.deadline,
-    });
+    setFormData({ ...activity }); // deep clone to avoid shared references
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Auto-save data to the corresponding activity
     if (selectedActivity !== null) {
-      const updatedActivities = [...activities];
-      updatedActivities[selectedActivity] = {
-        ...updatedActivities[selectedActivity],
-        [name]: value,
-      };
+      const updatedActivities = JSON.parse(JSON.stringify(activities)); // deep clone
+      updatedActivities[selectedActivity][name] = value;
       setActivities(updatedActivities);
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleMessageSubmit(); // Submit the message when pressing Enter
-    }
+    if (e.key === "Enter") handleMessageSubmit();
+  };
+
+  const handleSchedule = async () => {
+    const result = await scheduleEvent(accessToken, formData);
+    if (!result.success) console.error(result.message);
+    return result.success;
   };
 
   return (
     <div className="flex h-screen">
-      {/* Left Half: Chat UI (with submit button for messages) */}
+      {/* Left Half: Chat UI */}
       <div className="w-3/4 p-6 flex flex-col border-r border-gray-300">
         <div className="text-lg font-bold text-center bg-gray-100 p-2 rounded-t-lg">
           Chat with AI
         </div>
         <div className="flex-grow overflow-y-auto p-4 bg-gray-50">
-          {/* Loader */}
           {loading && (
             <div className="flex justify-center items-center h-full">
               <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-16 h-16 animate-spin"></div>
             </div>
           )}
 
-          {/* Activity Cards */}
-          {!loading && activities.map((activity, index) => (
-            <div
-              key={index}
-              className={`bg-white p-4 mb-4 border border-gray-300 rounded-lg cursor-pointer ${
-                selectedActivity === index
-                  ? "border-4 border-blue-500 animate-outline" // Add a subtle animation to the selected card outline
-                  : ""
-              }`}
-              onClick={() => handleCardClick(index)}
-            >
-              <p className="font-semibold">Activity #{index + 1}</p>
-              <p>{activity.title}</p> {/* Displaying the title of each activity */}
-            </div>
-          ))}
+          {!loading &&
+            activities.map((activity, index) => (
+              <div
+                key={index}
+                className={`bg-white p-4 mb-4 border border-gray-300 rounded-lg cursor-pointer ${
+                  selectedActivity === index ? "border-4 border-blue-500 animate-outline" : ""
+                }`}
+                onClick={() => handleCardClick(index)}
+              >
+                <p className="font-semibold">Activity #{index + 1}</p>
+                <p>{activity.title}</p>
+              </div>
+            ))}
         </div>
         <div className="flex space-x-2">
           <input
@@ -164,12 +146,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Right Half: Form for the selected activity */}
+      {/* Right Half: Form */}
       <div className="w-1/4 p-6">
         {selectedActivity !== null && (
           <div>
             <div className="text-lg font-bold mb-4">
-              {/* Display the activity number in the form */}
               Editing Activity #{selectedActivity + 1}
             </div>
             <div className="space-y-6">
@@ -246,6 +227,38 @@ export default function Dashboard() {
                   className="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+            </div>
+
+            {/* Schedule Button */}
+            <div className="mt-6 flex flex-col items-center">
+              <Button
+                className={`p-3 mt-4 w-full rounded-md ${
+                  isFormComplete
+                    ? "bg-green-500 hover:bg-green-600 cursor-pointer"
+                    : "bg-gray-400 cursor-not-allowed"
+                }`}
+                disabled={!isFormComplete}
+                onClick={async () => {
+                  const result = await handleSchedule();
+                  const updated = JSON.parse(JSON.stringify(activities)); // deep clone
+                  updated[selectedActivity].scheduleStatus = result;
+                  setActivities(updated);
+                }}
+              >
+                Schedule
+              </Button>
+
+              {activities[selectedActivity]?.scheduleStatus !== null && (
+                <p
+                  className={`mt-2 text-sm ${
+                    activities[selectedActivity].scheduleStatus ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {activities[selectedActivity].scheduleStatus
+                    ? "Scheduled successfully!"
+                    : "Failed to schedule. Please try again."}
+                </p>
+              )}
             </div>
           </div>
         )}

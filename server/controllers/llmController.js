@@ -1,11 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { extractActivities } from "../prompts/extractActivities.js";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
-
 export const identifyActivities = async (req, res) => {
     try {
         const { text } = req.body
+
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
         const response = await ai.models.generateContent({
             model: "models/gemma-3-27b-it",
             contents: extractActivities(text)
