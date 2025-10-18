@@ -7,4 +7,8 @@ router.post("/auth/oauth/google", async (req, res, next) => {
     generateOAuth2URI(req, res).catch(next);
 })
 
+router.get('/auth/oauth/google/tokens', (req, res, next) => {
+
+})
+
 export default router;
