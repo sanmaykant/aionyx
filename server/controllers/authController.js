@@ -1,4 +1,5 @@
 import { OAuth2Client } from "google-auth-library";
+import { User } from "../models/user.js";
 
 async function getUserData(access_token) {
     const response = await fetch(
@@ -54,18 +55,19 @@ export const retrieveTokensGoogleOAuth = async (req, res) => {
 
         console.log(refreshToken, accessToken, googleId, name, email)
 
-        // const user = new User({
-        //     googleId,
-        //     name,
-        //     email,
-        //     accessToken,
-        //     refreshToken
-        // })
-        // await user.save()
-        // console.log(user)
+        const user = new User({
+            googleId,
+            name,
+            email,
+            accessToken,
+            refreshToken
+        })
+        await user.save()
+        console.log(user)
 
-        res.redirect(303, `http://localhost:5173/dashboard`);
-    } catch (error) {
+        res.redirect(303, `http://localhost:5173/dashboard?accessToken=${accessToken}`);
+    } 
+    catch (error) {
         res.json({success: false,
             error
         })
