@@ -8,6 +8,10 @@ async function getUserData(access_token) {
     return data
 }
 
+async function checkUserExists(email) {
+    const user = await User.find({ email })
+    return user
+}
 
 export const generateOAuth2URI = async (req,res) => {
     const oAuth2Client = new OAuth2Client(
@@ -53,24 +57,25 @@ export const retrieveTokensGoogleOAuth = async (req, res) => {
         const { name, email } = await getUserData(
             oAuth2Client.credentials.access_token);
 
-        console.log(refreshToken, accessToken, googleId, name, email)
+        let user = checkUserExists(email)
+        if (user) {
+            user = await User.updateOne({ email }, { accessToken, refreshToken })
+        } else {
+            user = new User({
+                googleId,
+                name,
+                email,
+                accessToken,
+                refreshToken
+            })
+            await user.save()
+        }
 
-        const user = new User({
-            googleId,
-            name,
-            email,
-            accessToken,
-            refreshToken
-        })
-        await user.save()
         console.log(user)
-
-        res.redirect(303, `http://localhost:5173/dashboard?accessToken=${accessToken}`);
+        res.redirect(303, `http://localhost:5173/register?accessToken=${accessToken}`);
     } 
     catch (error) {
-        res.json({success: false,
-            error
-        })
+        res.json({success: false, error })
         throw error
     }
 }
