@@ -44,3 +44,6 @@ token.json
 google_oauth.json
 
 ollama/.ollama/
+
+server/static/
+

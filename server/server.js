@@ -3,6 +3,8 @@ import authRoutes from "./routes/authRoutes.js";
 import dotenv from "dotenv";
 import cors from 'cors';
 import mongoose from "mongoose";
+import llmRoutes from "./routes/llmRoutes.js";
+
 
 await mongoose.connect("mongodb://localhost:27017/aionyx")
 
@@ -12,6 +14,7 @@ const app=express()
 
 app.use(cors())
 app.use(express.json())
+app.use("/uploads", express.static("uploads")); 
 
 app.get("/", (req, res) => {
     res.json({
@@ -20,6 +23,7 @@ app.get("/", (req, res) => {
 })
 
 app.use("/api", authRoutes);
+app.use("/api", llmRoutes);
 
 app.listen(3000, () => {
     console.log("Success");
