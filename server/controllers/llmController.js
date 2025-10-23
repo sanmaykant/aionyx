@@ -5,6 +5,8 @@ import fs from "fs";
 import path from "path";
 import { fromPath } from 'pdf2pic';
 import { PDFDocument } from "pdf-lib";
+import { createWorker } from "tesseract.js";
+import Tesseract from "tesseract.js";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -29,6 +31,7 @@ export const handleMessage = async (req, res) => {
   try {
     const { message } = req.body; 
     const file = req.file; 
+    let imageAd=[];
 
     console.log("message message:", message);
     console.log("Uploaded file info:", file);
@@ -40,11 +43,13 @@ export const handleMessage = async (req, res) => {
     }
     else if (file.mimetype==="application/pdf")
     {
-        convertToImage(file.filename)
+        imageAd= await convertToImage(file.filename)
     }
-    // else {
-    //     identifyActivitiesImage()
-    // }
+    else {
+        const address='static/image/'+file.filename;
+        imageAd.push(address)
+        convertToText([imageAd])
+    }
 
     res.status(200).json({
       success: true,
@@ -81,6 +86,8 @@ export const convertToImage = async (originalname) => {
     const pdfDoc = await PDFDocument.load(dataBuffer);
     const pages=pdfDoc.getPageCount();
 
+    const imageAd=[];
+
     for (let i=1; i<=pages; i++) {
         console.log("Page first console", i)
         const options = {
@@ -103,5 +110,63 @@ export const convertToImage = async (originalname) => {
             console.error('Conversion error:', error);
         }
         console.log('Page'+i+'is now converted as an image');
+        const ad='static/images/pdftoimage'+i
+        imageAd.push(ad);
     }
+    convertToText(imageAd)
+    return imageAd
+
 }
+
+
+// export const convertToText = async (imagePaths) => {
+//   const worker = createWorker({
+//     logger: (m) => console.log(m), 
+//   });
+
+//   await worker.load();
+//   await worker.loadLanguage("eng");
+//   await worker.initialize("eng");
+
+//   const textArray = [];
+
+//   for (const img of imagePaths) {
+//     const imagePath = path.resolve(img); 
+//     try {
+//       const { data: { text } } = await worker.recognize(imagePath);
+//       textArray.push(text);
+//       console.log("Extracted Text:", text);
+//     } catch (error) {
+//       console.error("Error recognizing image:", error);
+//       textArray.push(""); 
+//     }
+//   }
+
+//   await worker.terminate();
+//   return textArray;
+// };
+
+// const convertToText = (imageAd) => {
+//   const textArray = [];
+//   for (let i = 0; i < imageAd.length; i++) {
+//     const imagePath = imageAd[i];
+//     console.log("first log");
+//     Tesseract.recognize(imagePath, 'eng', {
+//       logger: (m) =>console.log(m),
+//     }).then(({
+//       data: {
+//         text
+//       }
+//     }) =>{
+//       textArray.push(text);
+//       console.log('Extracted Text:', text);
+//     }).
+//     catch((error) =>{
+//       console.error('Error:', error);
+//     });
+//   }
+//   console.log(textArray);
+//   return textArray;
+// }
+
+
