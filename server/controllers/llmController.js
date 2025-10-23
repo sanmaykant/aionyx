@@ -76,35 +76,32 @@ export const identifyActivitiesText = async (message) => {
 }
 
 export const convertToImage = async (originalname) => {
-
-    const pageToConvertAsImage = 1;
-
     const filepath='static/pdfs/'+originalname
     const dataBuffer = fs.readFileSync(filepath);
     const pdfDoc = await PDFDocument.load(dataBuffer);
     const pages=pdfDoc.getPageCount();
 
     for (let i=1; i<=pages; i++) {
+        console.log("Page first console", i)
+        const options = {
+            density: 400,
+            saveFilename: 'static/images/pdftoimage'+i,
+            format: 'png',
+            width: 600,
+            height: 600,
+        };
 
-    const options = {
-    density: 400,
-    saveFilename: 'static/images/pdftoimage'+i,
-    format: 'png',
-    width: 600,
-    height: 600,
-    };
+        const convert = fromPath(filepath, options);
+        console.log("Page second console", i)
 
-    const convert = fromPath(filepath, options);
-
-    try {
-        const result = await convert(i, {
-        responseType: 'image',
-        });
-        console.log(result);
-        return result;
-    } catch (error) {
-        console.error('Conversion error:', error);
+        try {
+            const result = await convert(i, {
+                responseType: 'image',
+            });
+            console.log(result);
+        } catch (error) {
+            console.error('Conversion error:', error);
+        }
+        console.log('Page'+i+'is now converted as an image');
     }
-    console.log('Page'+i+'is now converted as an image');
-}
 }
