@@ -128,10 +128,9 @@ const convertToText = async (imageAd) => {
     console.log(imageAd[i]);
     console.log("first log");
     await Tesseract.recognize(imagePath, 'eng', {
-      //logger: (m) =>console.log(m),
-        ocrEngineMode: 3, // Use both engine modes
-        tessedit_pageseg_mode: 6, // Use single block of text
-        tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', // Limit to specific characters
+        ocrEngineMode: 3, 
+        tessedit_pageseg_mode: 6, 
+        tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 
     }).then(({
       data: {
         text

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { sendMessage } from "@/api/llmApi";
+import Activities from "@/components/Activities";
 
 export function DashboardPage() {
   const logout = () => {
@@ -11,6 +12,7 @@ export function DashboardPage() {
   const [newMessage, setNewMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [activity, setActivity]=useState([]);
 
   // handle file selection (image or PDF)
   const handleFileChange = (e) => {
@@ -35,7 +37,9 @@ export function DashboardPage() {
       formData.append("file", selectedFile);
     }
     try {
-      await sendMessage(formData); // send FormData to backend
+      const acti=await sendMessage(formData);
+      setActivity(acti.body);
+      console.log(acti.body);
       setNewMessage("");
       setSelectedFile(null);
       setPreview(null);
@@ -78,7 +82,7 @@ export function DashboardPage() {
       {selectedFile && selectedFile.type === "application/pdf" && (
         <p className="text-sm text-gray-500 mt-2">📄 {selectedFile.name}</p>
       )}
-
+      <Activities activitiesArray={activity} />
       {/* Submit Button */}
       <Button onClick={handleSubmit}>Submit</Button>
     </div>
