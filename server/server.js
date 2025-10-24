@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import cors from 'cors';
 import mongoose from "mongoose";
 import llmRoutes from "./routes/llmRoutes.js";
-
+import scheduleRoutes from "./routes/scheduleRoutes.js";
 
 await mongoose.connect("mongodb://localhost:27017/aionyx")
 
@@ -24,6 +24,7 @@ app.get("/", (req, res) => {
 
 app.use("/api", authRoutes);
 app.use("/api", llmRoutes);
+app.use("/api", scheduleRoutes);
 
 app.listen(3000, () => {
     console.log("Success");

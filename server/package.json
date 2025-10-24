@@ -21,6 +21,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "google-auth-library": "^10.4.1",
+    "googleapis": "^164.1.0",
     "mongoose": "^8.19.1",
     "multer": "^2.0.2",
     "pdf-lib": "^1.17.1",

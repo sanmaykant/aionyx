@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import { scheduleApi } from '@/api/scheduleApi';
 
 function activities(props) {
     // const activitiesArray=props.activitiesArray;
@@ -28,6 +29,7 @@ function activities(props) {
         return newArray;
     });
     };
+    const access_token=localStorage.getItem("access-token");
     return (
         <>
             <ul>
@@ -126,6 +128,10 @@ function activities(props) {
                     </div>
                 </div>
             )}
+            <button onClick={(e) => {console.log(activitiesArray[activityIndex])
+                scheduleApi(access_token, activitiesArray[activityIndex])
+                } 
+                }>Schedule</button>
         </>
     )
 }
