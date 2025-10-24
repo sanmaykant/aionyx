@@ -46,9 +46,14 @@ export const handleMessage = async (req, res) => {
         imageAd= await convertToImage(file.filename)
     }
     else {
-        const address='static/image/'+file.filename;
+        const address='static/images/'+file.filename;
         imageAd.push(address)
-        convertToText([imageAd])
+    }
+
+    if (!message.length)
+    {
+      const textFromImage=await convertToText(imageAd)
+      activitiesObject=await identifyActivitiesText(textFromImage)
     }
 
     res.status(200).json({
@@ -113,60 +118,32 @@ export const convertToImage = async (originalname) => {
         const ad='static/images/pdftoimage'+i
         imageAd.push(ad);
     }
-    convertToText(imageAd)
     return imageAd
-
 }
 
 
-// export const convertToText = async (imagePaths) => {
-//   const worker = createWorker({
-//     logger: (m) => console.log(m), 
-//   });
-
-//   await worker.load();
-//   await worker.loadLanguage("eng");
-//   await worker.initialize("eng");
-
-//   const textArray = [];
-
-//   for (const img of imagePaths) {
-//     const imagePath = path.resolve(img); 
-//     try {
-//       const { data: { text } } = await worker.recognize(imagePath);
-//       textArray.push(text);
-//       console.log("Extracted Text:", text);
-//     } catch (error) {
-//       console.error("Error recognizing image:", error);
-//       textArray.push(""); 
-//     }
-//   }
-
-//   await worker.terminate();
-//   return textArray;
-// };
-
-// const convertToText = (imageAd) => {
-//   const textArray = [];
-//   for (let i = 0; i < imageAd.length; i++) {
-//     const imagePath = imageAd[i];
-//     console.log("first log");
-//     Tesseract.recognize(imagePath, 'eng', {
-//       logger: (m) =>console.log(m),
-//     }).then(({
-//       data: {
-//         text
-//       }
-//     }) =>{
-//       textArray.push(text);
-//       console.log('Extracted Text:', text);
-//     }).
-//     catch((error) =>{
-//       console.error('Error:', error);
-//     });
-//   }
-//   console.log(textArray);
-//   return textArray;
-// }
+const convertToText = async (imageAd) => {
+  const textArray = [];
+  for (let i = 0; i < imageAd.length; i++) {
+    const imagePath = imageAd[i];
+    console.log(imageAd[i]);
+    console.log("first log");
+    await Tesseract.recognize(imagePath, 'eng', {
+      //logger: (m) =>console.log(m),
+    }).then(({
+      data: {
+        text
+      }
+    }) =>{
+      textArray.push(text);
+      console.log('Extracted Text:', text);
+    }).
+    catch((error) =>{
+      console.error('Error:', error);
+    });
+  }
+  console.log(textArray);
+  return textArray;
+}
 
 
