@@ -2,14 +2,12 @@ import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { extractActivities } from "../prompts/extractionPrompt.js";
 import fs from "fs";
-import path from "path";
 import { fromPath } from 'pdf2pic';
 import { PDFDocument } from "pdf-lib";
-import { createWorker } from "tesseract.js";
 import Tesseract from "tesseract.js";
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_, file, cb) => {
     let dest="static/uploads/";
     if (file.mimetype.startsWith("image/")) {
       dest = "static/images/";
@@ -19,7 +17,7 @@ const storage = multer.diskStorage({
     fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);
   },
-  filename: (req, file, cb) => {
+  filename: (_, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
     console.log(file.originalname)
   },
@@ -54,6 +52,7 @@ export const handleMessage = async (req, res) => {
     {
       const textFromImage=await convertToText(imageAd)
       activitiesObject=await identifyActivitiesText(textFromImage)
+      console.log(activitiesObject)
     }
 
     res.status(200).json({
@@ -96,11 +95,11 @@ export const convertToImage = async (originalname) => {
     for (let i=1; i<=pages; i++) {
         console.log("Page first console", i)
         const options = {
-            density: 400,
-            saveFilename: 'static/images/pdftoimage'+i,
+            density: 800,
+            saveFilename: 'static/images/pdftoimage',
             format: 'png',
-            width: 600,
-            height: 600,
+            width: 1200,
+            height: 1200,
         };
 
         const convert = fromPath(filepath, options);
@@ -115,7 +114,7 @@ export const convertToImage = async (originalname) => {
             console.error('Conversion error:', error);
         }
         console.log('Page'+i+'is now converted as an image');
-        const ad='static/images/pdftoimage'+i
+        const ad='static/images/pdftoimage.'+i+".png"
         imageAd.push(ad);
     }
     return imageAd
@@ -130,6 +129,9 @@ const convertToText = async (imageAd) => {
     console.log("first log");
     await Tesseract.recognize(imagePath, 'eng', {
       //logger: (m) =>console.log(m),
+        ocrEngineMode: 3, // Use both engine modes
+        tessedit_pageseg_mode: 6, // Use single block of text
+        tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', // Limit to specific characters
     }).then(({
       data: {
         text
