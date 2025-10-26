@@ -5,6 +5,8 @@ import fs from "fs";
 import { fromPath } from 'pdf2pic';
 import { PDFDocument } from "pdf-lib";
 import Tesseract from "tesseract.js";
+import { promises as fsPromises } from 'fs';
+
 
 const storage = multer.diskStorage({
   destination: (_, file, cb) => {
@@ -23,10 +25,10 @@ const storage = multer.diskStorage({
   },
 });
 
-const deleteFile = async(filepath) => {
+const deleteFile = async(filePath) => {
     try {
         await fsPromises.unlink(filePath);
-        console.log('File deleted successfully'+filepath);
+        console.log('File deleted successfully'+filePath);
     } catch (err) {
         console.error('Error deleting file with promises:', err);
     }
@@ -151,7 +153,7 @@ const convertToText = async (imageAd) => {
     catch((error) =>{
       console.error('Error:', error);
     });
-    filepath(imagePath)
+    deleteFile(imagePath)
   }
   console.log(textArray);
   return textArray;
