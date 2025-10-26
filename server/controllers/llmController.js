@@ -23,6 +23,15 @@ const storage = multer.diskStorage({
   },
 });
 
+const deleteFile = async(filepath) => {
+    try {
+        await fsPromises.unlink(filePath);
+        console.log('File deleted successfully'+filepath);
+    } catch (err) {
+        console.error('Error deleting file with promises:', err);
+    }
+}
+
 const upload = multer({ storage });
 
 export const handleMessage = async (req, res) => {
@@ -117,9 +126,9 @@ export const convertToImage = async (originalname) => {
         const ad='static/images/pdftoimage.'+i+".png"
         imageAd.push(ad);
     }
+    deleteFile(filepath);
     return imageAd
 }
-
 
 const convertToText = async (imageAd) => {
   const textArray = [];
@@ -142,6 +151,7 @@ const convertToText = async (imageAd) => {
     catch((error) =>{
       console.error('Error:', error);
     });
+    filepath(imagePath)
   }
   console.log(textArray);
   return textArray;
