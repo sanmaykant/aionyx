@@ -17,12 +17,11 @@ export const scheduleApi = async (access_token, activity) => {
 
         if (resJson.success) {
             console.log(resJson.body);
-            return resJson.body;
+            return resJson;
         } else {
             throw new Error(resJson.error);
         }
     }catch (error) {
         console.log("Error caught:", error);
     }
-
 }

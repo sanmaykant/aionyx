@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import { Button } from './ui/button';
 import { scheduleApi } from '@/api/scheduleApi';
 
 function activities(props) {
     // const activitiesArray=props.activitiesArray;
     const [activitiesArray, setActivitiesArray] = useState([]);
     const [activityIndex, setActivityIndex] = useState(null)
+    const [body, setBody]=useState({message:""});
     const updateActivityIndex = index => {
         setActivityIndex(index);
     }
@@ -30,6 +32,7 @@ function activities(props) {
     });
     };
     const access_token=localStorage.getItem("access-token");
+
     return (
         <>
             <ul>
@@ -126,12 +129,16 @@ function activities(props) {
                             className="w-full mt-2 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
+                    <Button onClick={async (e) => {console.log(activitiesArray[activityIndex])
+                        const recieved=await scheduleApi(access_token, activitiesArray[activityIndex])
+                        setBody(recieved)
+                        console.log("Recieved:"+recieved)
+                    }}>Schedule</Button>
+                    <div>{body.message}
+                        {console.log(body.message)}
+                    </div>
                 </div>
             )}
-            <button onClick={(e) => {console.log(activitiesArray[activityIndex])
-                scheduleApi(access_token, activitiesArray[activityIndex])
-                } 
-                }>Schedule</button>
         </>
     )
 }

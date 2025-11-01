@@ -14,57 +14,76 @@ const ensureSeconds = (timeString) => {
   }
 };
 
-export const scheduleEvent = async (req, res) => {
-    try {
-        const { accessToken, eventDetails } = req.body
+async function checkCalendarConflicts(calendar, startTime, endTime) {
+  const requestBody = {
+    timeMin: new Date(startTime).toISOString(),
+    timeMax: new Date(endTime).toISOString(),
+    timeZone: "Asia/Kolkata",
+    items: [{ id: "primary" }], // check for the user's primary calendar
+  };
 
-        const oAuth2Client = new OAuth2Client(
-            process.env.CLIENT_ID,
-            process.env.CLIENT_SECRET,
-            process.env.REDIRECT_URI
-        );
+  const res = await calendar.freebusy.query({
+    requestBody,
+  });
 
-        const user = await User.findOne({ accessToken: accessToken })
-        const refreshToken = user.refreshToken
-        
-        console.log(accessToken, refreshToken)
-        oAuth2Client.setCredentials({
-            access_token: accessToken,
-            refresh_token: refreshToken
-        })
+  const busySlots = res.data.calendars.primary.busy;
 
-        const calendar = google.calendar({ version: "v3", auth: oAuth2Client })
-
-        const startTimeWithSeconds = ensureSeconds(eventDetails.start_time);
-        console.log("Seconds wala: "+startTimeWithSeconds)
-        console.log(eventDetails.start_time)
-        const endTimeWithSeconds = ensureSeconds(eventDetails.end_time);
-        const event = {
-            summary: eventDetails.title,
-            description: eventDetails.description,
-            start: {
-                dateTime: startTimeWithSeconds,
-                timeZone: "Asia/Kolkata"
-            },
-            end: {
-                dateTime: endTimeWithSeconds,
-                timeZone: "Asia/Kolkata"
-            },
-            reminders: { useDefault: true }
-        }
-
-        console.log(event)
-
-        const result = calendar.events.insert({
-            calendarId: 'primary',
-            resource: event, 
-        });
-
-        console.log('Event created:', result);
-
-        return res.status(200).json({ success: true, message: result.data })
-    } catch (error) {
-        console.error(error)
-        res.status(400).json({ success: false, message: error })
-    }
+  if (busySlots.length > 0) {
+    console.log("⚠️ Conflicts found:", busySlots);
+    return { conflict: true, busySlots };
+  } else {
+    console.log("✅ No conflicts found!");
+    return { conflict: false };
+  }
 }
+
+export const scheduleEvent = async (req, res) => {
+  try {
+    const { accessToken, eventDetails } = req.body;
+
+    const oAuth2Client = new OAuth2Client(
+      process.env.CLIENT_ID,
+      process.env.CLIENT_SECRET,
+      process.env.REDIRECT_URI
+    );
+
+    const user = await User.findOne({ accessToken });
+    oAuth2Client.setCredentials({
+      access_token: accessToken,
+      refresh_token: user.refreshToken,
+    });
+
+    const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
+
+    const { conflict, busySlots } = await checkCalendarConflicts(
+      calendar,
+      eventDetails.start_time,
+      eventDetails.end_time
+    );
+
+    if (conflict) {
+      return res.status(409).json({
+        success: true,
+        message: "Time conflict detected!",
+        conflicts: busySlots,
+      });
+    }
+
+    const event = {
+      summary: eventDetails.title,
+      description: eventDetails.description,
+      start: { dateTime: eventDetails.start_time, timeZone: "Asia/Kolkata" },
+      end: { dateTime: eventDetails.end_time, timeZone: "Asia/Kolkata" },
+    };
+
+    const result = await calendar.events.insert({
+      calendarId: "primary",
+      requestBody: event,
+    });
+
+    res.status(200).json({ success: true, message: "Event scheduled", result: result.data });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
