@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AboutPage } from "./pages/About";
 import { RegisterPage } from "./pages/Register";
 import { DashboardPage } from "./pages/Dashboard";
 import { HomePage } from "./pages/Home";
@@ -7,38 +8,38 @@ import "./App.css";
 function App() {
   const [currentPage, setCurrentPage] = useState("home");
 
-  useEffect(() => {
-    // Detect current URL path
+  // Function to update page based on current URL
+  const updatePage = () => {
     const path = window.location.pathname;
     if (path === "/" || path === "/home") setCurrentPage("home");
+    else if (path === "/about") setCurrentPage("about");
     else if (path === "/register") setCurrentPage("register");
     else if (path === "/dashboard") setCurrentPage("dashboard");
     else setCurrentPage("404");
+  };
+
+  useEffect(() => {
+    // Run once when the component mounts
+    updatePage();
+
+    // Listen for browser navigation (back/forward)
+    window.addEventListener("popstate", updatePage);
+
+    // Cleanup on unmount
+    return () => window.removeEventListener("popstate", updatePage);
   }, []);
 
   // Navigate between pages
   const navigate = (path) => {
     window.history.pushState({}, "", path);
-    window.dispatchEvent(new Event("popstate"));
+    updatePage(); // ✅ Trigger immediate re-render
   };
-
-  // Listen for browser navigation (back/forward)
-  useEffect(() => {
-    const handlePop = () => {
-      const path = window.location.pathname;
-      if (path === "/" || path === "/home") setCurrentPage("home");
-      else if (path === "/register") setCurrentPage("register");
-      else if (path === "/dashboard") setCurrentPage("dashboard");
-      else setCurrentPage("404");
-    };
-    window.addEventListener("popstate", handlePop);
-    return () => window.removeEventListener("popstate", handlePop);
-  }, []);
 
   // Render current page
   return (
     <>
       {currentPage === "home" && <HomePage navigate={navigate} />}
+      {currentPage === "about" && <AboutPage navigate={navigate} />}
       {currentPage === "register" && <RegisterPage navigate={navigate} />}
       {currentPage === "dashboard" && <DashboardPage navigate={navigate} />}
       {currentPage === "404" && (
