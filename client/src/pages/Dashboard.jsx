@@ -12,9 +12,8 @@ export function DashboardPage() {
   const [newMessage, setNewMessage] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [activity, setActivity]=useState([]);
+  const [activity, setActivity] = useState([]);
 
-  // handle file selection (image or PDF)
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -24,22 +23,19 @@ export function DashboardPage() {
         reader.onloadend = () => setPreview(reader.result);
         reader.readAsDataURL(file);
       } else {
-        setPreview(null); 
+        setPreview(null);
       }
     }
   };
 
-  // handle submit (send text + file)
   const handleSubmit = async () => {
     const formData = new FormData();
     formData.append("message", newMessage);
-    if (selectedFile) {
-      formData.append("file", selectedFile);
-    }
+    if (selectedFile) formData.append("file", selectedFile);
+
     try {
-      const acti=await sendMessage(formData);
+      const acti = await sendMessage(formData);
       setActivity(acti.body);
-      console.log(acti.body);
       setNewMessage("");
       setSelectedFile(null);
       setPreview(null);
@@ -49,42 +45,77 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <Button onClick={logout}>Logout</Button>
+    <div className="min-h-screen bg-gray-900 text-gray-100 p-6">
+      <header className="flex justify-between items-center mb-8">
+        <h2 className="text-2xl font-semibold">Dashboard</h2>
+        <Button
+          onClick={logout}
+          className="bg-red-600 hover:bg-red-700 transition-colors"
+        >
+          Logout
+        </Button>
+      </header>
 
-      {/* Text Input */}
-      <input
-        type="text"
-        placeholder="Please enter the text"
-        className="border p-2 rounded w-full"
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-      />
-
-      {/* File Upload Input */}
-      <input
-        type="file"
-        accept="image/*,application/pdf"
-        onChange={handleFileChange}
-        className="block"
-      />
-
-      {/* Preview Section */}
-      {preview && (
-        <div className="mt-2">
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-48 h-48 object-cover rounded"
+      <div className="bg-gray-800 rounded-xl shadow-lg p-6 space-y-6">
+        {/* Message Input */}
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-300">
+            Message
+          </label>
+          <input
+            type="text"
+            placeholder="Type your message..."
+            className="w-full p-3 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
           />
         </div>
-      )}
-      {selectedFile && selectedFile.type === "application/pdf" && (
-        <p className="text-sm text-gray-500 mt-2">📄 {selectedFile.name}</p>
-      )}
-      <Activities activitiesArray={activity} />
-      {/* Submit Button */}
-      <Button onClick={handleSubmit}>Submit</Button>
+
+        {/* File Upload */}
+        <div>
+          <label className="block mb-2 text-sm font-medium text-gray-300">
+            Upload Image or PDF
+          </label>
+          <input
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleFileChange}
+            className="block w-full text-sm text-gray-400 border border-gray-600 rounded-lg cursor-pointer bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+
+        {/* Preview */}
+        {preview && (
+          <div className="mt-4 flex justify-center">
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-48 h-48 object-cover rounded-lg border border-gray-600"
+            />
+          </div>
+        )}
+        {selectedFile && selectedFile.type === "application/pdf" && (
+          <p className="text-sm text-gray-400 mt-2">📄 {selectedFile.name}</p>
+        )}
+
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSubmit}
+            className="bg-indigo-500 hover:bg-indigo-600 px-6 py-2 font-semibold"
+          >
+            Submit
+          </Button>
+        </div>
+      </div>
+
+      {/* Activities Section */}
+      <div className="mt-8">
+        <h3 className="text-xl font-semibold mb-4">Recent Activities</h3>
+        <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
+          <Activities activitiesArray={activity} />
+        </div>
+      </div>
     </div>
   );
 }
