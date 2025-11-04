@@ -15,6 +15,7 @@ const storage = multer.diskStorage({
       dest = "static/images/";
     } else if (file.mimetype === "application/pdf") {
       dest = "static/pdfs/";
+      fs.mkdirSync("static/images/", { recursive: true });
     }
     fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);

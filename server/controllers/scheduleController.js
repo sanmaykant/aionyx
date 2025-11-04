@@ -19,7 +19,7 @@ async function checkCalendarConflicts(calendar, startTime, endTime) {
     timeMin: new Date(startTime).toISOString(),
     timeMax: new Date(endTime).toISOString(),
     timeZone: "Asia/Kolkata",
-    items: [{ id: "primary" }], // check for the user's primary calendar
+    items: [{ id: "primary" }], 
   };
 
   const res = await calendar.freebusy.query({
