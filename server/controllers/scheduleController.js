@@ -5,37 +5,72 @@ import { User } from "../models/user.js";
 const ensureSeconds = (timeString) => {
   try {
     if (!timeString) return "";
+
+    // Remove 'Z' from the string if it exists (optional based on input)
+    timeString = timeString.replace("Z", "");
+
+    // Parse the time string as a local date
     const date = new Date(timeString);
-    const isoWithSeconds = date.toISOString().slice(0, 19);
-    return isoWithSeconds;
+
+    // If the date is invalid, return an empty string
+    if (isNaN(date)) {
+      console.error("Invalid date string:", timeString);
+      return "";
+    }
+
+    // Use the local time parts (hours, minutes) and set seconds to '00'
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = '00'; // Always set seconds to 00
+
+    // Return the formatted string in the form: "YYYY-MM-DDTHH:MM:SS"
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
   } catch (error) {
-    console.error("Invalid time string provided:", timeString, error);
+    console.error("Error processing time string:", timeString, error);
     return "";
   }
 };
 
 async function checkCalendarConflicts(calendar, startTime, endTime) {
+  // Convert start and end times to UTC and log for debugging
+  const timeMin = new Date(startTime).toISOString();
+  const timeMax = new Date(endTime).toISOString();
+  console.log('Start Time (UTC):', timeMin);
+  console.log('End Time (UTC):', timeMax);
+
   const requestBody = {
-    timeMin: new Date(startTime).toISOString(),
-    timeMax: new Date(endTime).toISOString(),
-    timeZone: "Asia/Kolkata",
-    items: [{ id: "primary" }], 
+    timeMin: timeMin,
+    timeMax: timeMax,
+    timeZone: "Asia/Kolkata", // Make sure this is correct
+    items: [{ id: "primary" }], // Check for the user's primary calendar
   };
 
-  const res = await calendar.freebusy.query({
-    requestBody,
-  });
+  try {
+    const res = await calendar.freebusy.query({
+      requestBody,
+    });
 
-  const busySlots = res.data.calendars.primary.busy;
+    const busySlots = res.data.calendars.primary.busy;
 
-  if (busySlots.length > 0) {
-    console.log("⚠️ Conflicts found:", busySlots);
-    return { conflict: true, busySlots };
-  } else {
-    console.log("✅ No conflicts found!");
-    return { conflict: false };
+    // Log detailed information on busy slots
+    console.log("Returned Busy Slots:", JSON.stringify(busySlots, null, 2));
+
+    if (busySlots.length > 0) {
+      console.log("⚠️ Conflicts found:", busySlots);
+      return { conflict: true, busySlots };
+    } else {
+      console.log("✅ No conflicts found!");
+      return { conflict: false };
+    }
+  } catch (error) {
+    console.error("Error querying calendar:", error);
+    return { conflict: false, error: error.message };
   }
 }
+
 
 export const scheduleEvent = async (req, res) => {
   try {
@@ -55,10 +90,15 @@ export const scheduleEvent = async (req, res) => {
 
     const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
 
+    console.log(eventDetails.start, eventDetails.end)
+    const start_time = ensureSeconds(eventDetails.start)
+    const end_time = ensureSeconds(eventDetails.end)
+      console.log("here", start_time, end_time)
+
     const { conflict, busySlots } = await checkCalendarConflicts(
       calendar,
-      eventDetails.start_time,
-      eventDetails.end_time
+      start_time,
+      end_time
     );
 
     if (conflict) {
@@ -72,8 +112,8 @@ export const scheduleEvent = async (req, res) => {
     const event = {
       summary: eventDetails.title,
       description: eventDetails.description,
-      start: { dateTime: eventDetails.start_time, timeZone: "Asia/Kolkata" },
-      end: { dateTime: eventDetails.end_time, timeZone: "Asia/Kolkata" },
+      start: { dateTime: start_time, timeZone: "Asia/Kolkata" },
+      end: { dateTime: end_time, timeZone: "Asia/Kolkata" },
     };
 
     const result = await calendar.events.insert({
