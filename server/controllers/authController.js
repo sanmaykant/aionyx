@@ -26,7 +26,7 @@ export const generateOAuth2URI = async (req,res) => {
 
     const authorizeUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
-        scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.readonly openid' ,
+        scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar openid' ,
         prompt: 'consent'
     });
 

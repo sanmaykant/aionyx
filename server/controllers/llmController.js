@@ -15,6 +15,7 @@ const storage = multer.diskStorage({
       dest = "static/images/";
     } else if (file.mimetype === "application/pdf") {
       dest = "static/pdfs/";
+      fs.mkdirSync("static/images/", { recursive: true });
     }
     fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);
@@ -65,6 +66,7 @@ export const handleMessage = async (req, res) => {
       activitiesObject=await identifyActivitiesText(textFromImage)
       console.log(activitiesObject)
     }
+      console.log(activitiesObject)
 
     res.status(200).json({
       success: true,
