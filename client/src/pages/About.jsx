@@ -149,19 +149,19 @@ export function AboutPage({isLoggedIn }) {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="p-6 bg-gray-800 rounded-xl shadow-md border border-gray-700 text-center">
               <div className="w-24 h-24 bg-indigo-400 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">A</div>
-              <h3 className="text-xl font-semibold text-indigo-400 mb-2">Alex Johnson</h3>
+              <h3 className="text-xl font-semibold text-indigo-400 mb-2">Shravani Pathak</h3>
               <p className="text-gray-300">CEO & Founder</p>
               <p className="text-gray-400 text-sm mt-2">Expert in AI and productivity solutions.</p>
             </div>
             <div className="p-6 bg-gray-800 rounded-xl shadow-md border border-gray-700 text-center">
               <div className="w-24 h-24 bg-indigo-400 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">B</div>
-              <h3 className="text-xl font-semibold text-indigo-400 mb-2">Bella Chen</h3>
+              <h3 className="text-xl font-semibold text-indigo-400 mb-2">Sanmay Kant</h3>
               <p className="text-gray-300">CTO</p>
               <p className="text-gray-400 text-sm mt-2">Leading our tech innovation and data security.</p>
             </div>
             <div className="p-6 bg-gray-800 rounded-xl shadow-md border border-gray-700 text-center">
               <div className="w-24 h-24 bg-indigo-400 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold text-white">C</div>
-              <h3 className="text-xl font-semibold text-indigo-400 mb-2">Carlos Rivera</h3>
+              <h3 className="text-xl font-semibold text-indigo-400 mb-2">Rahul Malu</h3>
               <p className="text-gray-300">Head of Product</p>
               <p className="text-gray-400 text-sm mt-2">Ensuring Aionyx meets user needs perfectly.</p>
             </div>
