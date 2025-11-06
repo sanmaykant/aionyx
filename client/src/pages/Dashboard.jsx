@@ -133,7 +133,7 @@ export function DashboardPage() {
       {/* Main Content divided into Chat + Schedule */}
       <div className="flex flex-grow gap-8">
         {/* 🔹 Chat Section */}
-              <div className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col justify-between w-full overflow-y-auto max-h-screen">
+        <div className="bg-gray-800 rounded-xl shadow-lg p-6 flex flex-col justify-between w-full overflow-y-auto max-h-[calc(100vh-120px)]"> {/* Added max-h */}
           {/* Activities Section */}
           <div className="mb-8">
             <h3 className="text-xl font-semibold mb-4">Recent Activities</h3>
@@ -297,3 +297,4 @@ export function DashboardPage() {
     </div>
   );
 }
+
