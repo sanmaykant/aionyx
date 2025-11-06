@@ -3,14 +3,23 @@ import path from "path";
 import { google } from "googleapis";
 import { authenticate } from "@google-cloud/local-auth";
 import { Buffer } from "buffer";
+import { config } from "dotenv";
+import { identifyActivitiesText } from "../controllers/llmController.js";
+import { OAuth2Client } from "google-auth-library";
+import { User } from "../models/user.js";
+
+config()
 
 // ---------------- CONFIG ----------------
-const SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.modify"
+];
 const TOKEN_PATH = path.join(process.cwd(), "token.json");
 const CREDENTIALS_PATH = path.join(process.cwd(), "credentials.json");
 const LAST_ID_PATH = path.join(process.cwd(), "last_message_id.txt");
-const MY_EMAIL = "rahulmalu25@gmail.com";
-const POLL_INTERVAL_MS = 60 * 1000; // 1 minute
+const MY_EMAIL = process.env.BOT_MAIL;
+const POLL_INTERVAL_MS = 5 * 1000; // 1 minute
 // ----------------------------------------
 
 async function loadToken() {
@@ -27,23 +36,27 @@ async function saveToken(token) {
 }
 
 async function authorize() {
-  const creds = JSON.parse(await fs.promises.readFile(CREDENTIALS_PATH, "utf-8"));
-  const { client_id, client_secret, redirect_uris } = creds.installed || creds.web;
-  const oauth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+    const creds = JSON.parse(await fs.promises.readFile(CREDENTIALS_PATH, "utf-8"));
+    const { client_id, client_secret, redirect_uris } = creds.installed || creds.web;
+    const oauth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
-  const token = await loadToken();
-  if (token) {
-    oauth2Client.setCredentials(token);
+    const token = await loadToken();
+    if (token) {
+        oauth2Client.setCredentials(token);
+        return oauth2Client;
+    }
+
+    const client = await authenticate({
+        keyfilePath: CREDENTIALS_PATH,
+        scopes: SCOPES,
+        port: 8000
+    });
+    if (client.credentials) {
+        oauth2Client.setCredentials(client.credentials);
+        await saveToken(client.credentials);
+    }
+
     return oauth2Client;
-  }
-
-  const client = await authenticate({ keyfilePath: CREDENTIALS_PATH, scopes: SCOPES });
-  if (client.credentials) {
-    oauth2Client.setCredentials(client.credentials);
-    await saveToken(client.credentials);
-  }
-
-  return oauth2Client;
 }
 
 function decodeBase64(data) {
@@ -81,6 +94,48 @@ function decodeMimeHeader(header) {
   });
 }
 
+async function addLabelToMessage(auth, messageId, labelId) {
+  const gmail = google.gmail({ version: "v1", auth });
+
+  try {
+    // Modify the message to add a label
+    const res = await gmail.users.messages.modify({
+      userId: "me",
+      id: messageId,
+      requestBody: {
+        addLabelIds: [labelId], // Add the labelId to the message
+      },
+    });
+    console.log(`Added label to message with ID: ${messageId}`);
+  } catch (err) {
+    console.error(`Failed to add label to message with ID: ${messageId}`, err);
+  }
+}
+
+async function getLabelId(auth, labelName) {
+  const gmail = google.gmail({ version: "v1", auth });
+
+  try {
+    // Fetch all labels
+    const res = await gmail.users.labels.list({
+      userId: "me",
+    });
+
+    const labels = res.data.labels || [];
+    const label = labels.find(l => l.name === labelName);
+
+    if (label) {
+      return label.id;
+    } else {
+      console.log(`Label "${labelName}" not found.`);
+      return null;
+    }
+  } catch (err) {
+    console.error("Failed to fetch labels", err);
+    return null;
+  }
+}
+
 async function getLastMessageId() {
   try {
     return await fs.promises.readFile(LAST_ID_PATH, "utf-8");
@@ -91,6 +146,12 @@ async function getLastMessageId() {
 
 async function setLastMessageId(id) {
   await fs.promises.writeFile(LAST_ID_PATH, id);
+}
+
+function addHoursToDate(dateString, hoursToAdd) {
+    const date = new Date(dateString);
+    date.setHours(date.getHours() + hoursToAdd);
+    return date.toISOString();
 }
 
 async function listCcEmails(auth) {
@@ -114,10 +175,17 @@ async function listCcEmails(auth) {
 
   if (!newMessages.length) {
     console.log(`[${new Date().toLocaleTimeString()}] No new emails.`);
+    setTimeout(() => listCcEmails(auth), POLL_INTERVAL_MS)
     return;
   }
 
   console.log(`\n📬 [${new Date().toLocaleTimeString()}] Found ${newMessages.length} new email(s)\n`);
+
+    const labelId = await getLabelId(auth, "processed");
+    if (!labelId){
+        console.error("'processed' label not configured for gmail bot")
+        return;
+    }
 
   for (const m of newMessages.reverse()) {
     const msg = await gmail.users.messages.get({
@@ -137,24 +205,74 @@ async function listCcEmails(auth) {
     const body = getMessageBody(msg.data.payload);
     const snippet = body.replace(/\n/g, " ").slice(0, 200);
 
+      const labels = msg.data.labelIds || [];
+      const labelsList = labels.length > 0 ? labels.join(", ") : "No labels";
+
+      console.log(snippet, labelsList)
+      if (labelsList.includes(labelId))
+          continue
+
     console.log(`Subject: ${subject}`);
     console.log(`From: ${from}`);
     console.log(`Date: ${date}`);
     console.log(`Cc: ${cc}`);
-    console.log(`Body snippet: ${snippet}`);
+    console.log(`Body snippet: ${snippet}`)
+      console.log(`Labels: ${labelsList}`);
     console.log("-".repeat(60));
+
+      const activities = await identifyActivitiesText(body)
+      console.log(activities)
+      if (activities.length !== 0) {
+          const oAuth2Client = new OAuth2Client(
+              process.env.CLIENT_ID,
+              process.env.CLIENT_SECRET,
+              process.env.REDIRECT_URI
+          );
+
+          const email = /<([^>]+)>/.exec(from)[1];
+          const user = await User.findOne({ email });
+          oAuth2Client.setCredentials({
+              access_token: user.accessToken,
+              refresh_token: user.refreshToken,
+          });
+
+          const calendar = google.calendar({ version: "v3", auth: oAuth2Client });
+
+          for (const activity of activities) {
+              if (!activity.start_time) {
+                  continue
+              }
+              let start_time = activity.start_time;
+              start_time = start_time.replace("Z", "")
+              let end_time = activity.end_time || addHoursToDate(activity.start_time, 1);
+              end_time = end_time.replace("Z", "")
+              console.log(start_time, end_time)
+              const event = {
+                  summary: activity.title,
+                  description: activity.description,
+                  start: { dateTime: start_time, timeZone: "Asia/Kolkata" },
+                  end: { dateTime: end_time, timeZone: "Asia/Kolkata" },
+              };
+
+              const result = await calendar.events.insert({
+                  calendarId: "primary",
+                  requestBody: event,
+              });
+              console.log(result)
+          }
+      }
+
+      await addLabelToMessage(auth, m.id, labelId)
 
     await setLastMessageId(m.id);
   }
+
+    setTimeout(() => listCcEmails(auth), POLL_INTERVAL_MS)
 }
 
-async function startWatcher() {
+export async function startWatcher() {
   const auth = await authorize();
   console.log("✅ Gmail watcher started... (polling every", POLL_INTERVAL_MS / 1000, "seconds)\n");
 
   await listCcEmails(auth);
-  setInterval(() => listCcEmails(auth), POLL_INTERVAL_MS);
 }
-
-// Run watcher
-startWatcher().catch((err) => console.error("❌ Error:", err));

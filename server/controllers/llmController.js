@@ -66,6 +66,7 @@ export const handleMessage = async (req, res) => {
       activitiesObject=await identifyActivitiesText(textFromImage)
       console.log(activitiesObject)
     }
+      console.log(activitiesObject)
 
     res.status(200).json({
       success: true,

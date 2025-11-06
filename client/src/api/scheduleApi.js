@@ -1,5 +1,3 @@
-import activities from "@/components/activities";
-
 export const scheduleApi = async (access_token, activity) => {
     console.log(activity);
     try {
