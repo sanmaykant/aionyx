@@ -113,7 +113,7 @@ cd client
 npm start
 ```
 
-The client should now be running at **http://localhost:3000**\
+The client should now be running at **http://localhost:5173**
 and the server at **http://localhost:5000** (or your configured port).
 
 * * * * *
